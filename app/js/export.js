@@ -1,6 +1,6 @@
 // Turns the project into Hearts of Iron IV mod files.
 import { indent, wrap, fmtNum, checkBraces } from './pdx.js';
-import { toDDS, toPNG, dataUrlToBytes, canvasToDDS } from './images.js';
+import { toDDS, toPNG, toTGA, dataUrlToBytes, canvasToDDS } from './images.js';
 import * as D from './data.js';
 import { allSubunits } from './refs.js';
 import { divisionStats } from './editors/divisions.js';
@@ -667,6 +667,69 @@ function exportDivisions(o) {
   }
 }
 
+
+// ---------------------------------------------------------------- new countries
+const BASIC_TECHS = ['infantry_weapons', 'infantry_weapons1', 'tech_support', 'tech_engineers', 'tech_recon', 'gw_artillery', 'interwar_antiair', 'early_fighter', 'gwtank_chassis', 'trench_warfare', 'fleet_in_being'];
+
+function hexRGB(hex) {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex || '');
+  const n = m ? parseInt(m[1], 16) : 0x7a5c9e;
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
+function exportCountries(o) {
+  const list = o.p.countries.filter((c) => c.isNew && /^[A-Z][A-Z0-9]{2}$/.test(c.tag || ''));
+  if (!list.length) return;
+  let tags = '';
+  for (const c of list) {
+    const file = (c.name || c.tag).replace(/[^A-Za-z0-9 _-]/g, '').trim() || c.tag;
+    tags += `${c.tag} = "countries/${file}.txt"\n`;
+    const [r, g, b] = hexRGB(c.color);
+    const cul = c.culture || 'western_european';
+    o.file(`common/countries/${file}.txt`, `graphical_culture = ${cul}_gfx\ngraphical_culture_2d = ${cul}_2d\n\ncolor = { ${r} ${g} ${b} }\n`);
+    // history
+    const pop = c.popularity || {};
+    const ideos = ['democratic', 'communism', 'fascism', 'neutrality'];
+    let total = ideos.reduce((a, i) => a + (Number(pop[i]) || 0), 0);
+    if (!total) { pop.neutrality = 100; total = 100; }
+    const scaled = ideos.map((i) => [i, Math.round(((Number(pop[i]) || 0) * 100) / total)]);
+    scaled[3][1] += 100 - scaled.reduce((a, x) => a + x[1], 0);
+    let hs = '';
+    if (c.existsAtStart && c.capital) hs += `capital = ${Math.round(Number(c.capital))}\n\n`;
+    hs += `set_research_slots = ${fmtNum(c.researchSlots ?? 3)}\nset_stability = ${fmtNum(c.stability ?? 0.5)}\nset_war_support = ${fmtNum(c.warSupport ?? 0.3)}\nset_convoys = ${fmtNum(c.convoys ?? 0)}\n\n`;
+    if (c.basicTechs !== false) hs += `set_technology = {\n${BASIC_TECHS.map((t) => `\t${t} = 1`).join('\n')}\n}\n\n`;
+    hs += `set_politics = {\n\truling_party = ${c.ruling || 'neutrality'}\n\tlast_election = "1934.1.1"\n\telection_frequency = 48\n\telections_allowed = ${c.elections ? 'yes' : 'no'}\n}\n\n`;
+    hs += `set_popularities = {\n${scaled.map(([i, v]) => `\t${i} = ${v}`).join('\n')}\n}\n`;
+    o.file(`history/countries/${c.tag} - ${file}.txt`, hs);
+    // flags
+    const flagSets = [['', c.flag], ...ideos.map((i) => ['_' + i, (c.ideoFlags || {})[i]])];
+    for (const [suffix, img] of flagSets) {
+      if (!img) continue;
+      o.img(img, `gfx/flags/${c.tag}${suffix}.tga`, [82, 52]);
+      o.img(img, `gfx/flags/medium/${c.tag}${suffix}.tga`, [41, 26]);
+      o.img(img, `gfx/flags/small/${c.tag}${suffix}.tga`, [10, 7]);
+    }
+    // names
+    const adj = c.adj || c.name;
+    const def = c.def || c.name;
+    o.l(c.tag, c.name);
+    o.l(`${c.tag}_DEF`, def);
+    o.l(`${c.tag}_ADJ`, adj);
+    for (const i of ideos) {
+      const n = (c.ideoNames || {})[i];
+      o.l(`${c.tag}_${i}`, n || c.name);
+      o.l(`${c.tag}_${i}_DEF`, n || def);
+      o.l(`${c.tag}_${i}_ADJ`, adj);
+    }
+    // territory at start
+    const ids = (arr) => (arr || []).map((x) => Math.round(Number(x))).filter((x) => x > 0);
+    if (c.existsAtStart) for (const s of ids(c.states)) o.startupGlobal.push(`${s} = { transfer_state_to = ${c.tag} add_core_of = ${c.tag} }`);
+    for (const s of ids(c.cores)) o.startupGlobal.push(`${s} = { add_core_of = ${c.tag} }`);
+    if (c.existsAtStart && Number(c.capital) > 0) o.onStart(c.tag, `set_capital = { state = ${Math.round(Number(c.capital))} }`);
+  }
+  o.file(`common/country_tags/${o.prefix}_countries.txt`, tags);
+}
+
 // ---------------------------------------------------------------- on_actions, gfx, loc, descriptor
 function exportOnActions(o) {
   const tags = Object.keys(o.startup);
@@ -694,7 +757,8 @@ async function finish(o) {
   for (const im of o.images) {
     try {
       const size = im.size || [512, 512];
-      o.file(im.path, await toDDS(im.dataUrl, size[0], size[1], im.mode || 'cover'));
+      if (im.path.endsWith('.tga')) o.file(im.path, await toTGA(im.dataUrl, size[0], size[1]));
+      else o.file(im.path, await toDDS(im.dataUrl, size[0], size[1], im.mode || 'cover'));
     } catch (e) {
       console.warn('image failed', im.path, e);
     }
@@ -720,7 +784,7 @@ async function finish(o) {
     o.file(`localisation/english/${o.prefix}_l_english.yml`, s);
   }
   const m = o.p.meta;
-  let desc = `version="${m.version || '1.0'}"\ntags={\n${(m.tags || []).map((t) => `\t"${t}"`).join('\n')}\n}\nname="${(m.name || 'My Mod').replace(/"/g, "'")}"\nsupported_version="${m.supported || '1.16.*'}"\n`;
+  let desc = `version="${m.version || '1.0'}"\ntags={\n${(m.tags || []).map((t) => `\t"${t}"`).join('\n')}\n}\nname="${(m.name || 'My Mod').replace(/"/g, "'")}"\nsupported_version="${m.supported || '1.19.*'}"\n`;
   if (m.thumbnail) {
     o.file('thumbnail.png', await toPNG(m.thumbnail, 256, 256, 'cover'));
     desc += 'picture="thumbnail.png"\n';
@@ -730,6 +794,7 @@ async function finish(o) {
 
 export async function buildMod(project) {
   const o = new Out(project);
+  exportCountries(o);
   exportFocusTrees(o);
   exportCharacters(o);
   exportTraits(o);
@@ -746,7 +811,7 @@ export async function buildMod(project) {
   await finish(o);
   const folder = safe(project.meta.folder || 'my_mod');
   const m = project.meta;
-  const outer = `version="${m.version || '1.0'}"\ntags={\n${(m.tags || []).map((t) => `\t"${t}"`).join('\n')}\n}\nname="${(m.name || 'My Mod').replace(/"/g, "'")}"\nsupported_version="${m.supported || '1.16.*'}"\npath="mod/${folder}"\n`;
+  const outer = `version="${m.version || '1.0'}"\ntags={\n${(m.tags || []).map((t) => `\t"${t}"`).join('\n')}\n}\nname="${(m.name || 'My Mod').replace(/"/g, "'")}"\nsupported_version="${m.supported || '1.19.*'}"\npath="mod/${folder}"\n`;
   return {
     folder,
     files: [...o.files.map((f) => ({ path: `${folder}/${f.path}`, data: f.data })), { path: `${folder}.mod`, data: outer }],
@@ -773,6 +838,16 @@ export function validate(p) {
     if (e) err(where, `${label}: ${e}`);
   };
 
+  for (const c of p.countries.filter((x) => x.isNew)) {
+    const w = `Country "${c.name}"`;
+    if (!/^[A-Z][A-Z0-9]{2}$/.test(c.tag || '')) err(w, 'Tag must be 3 characters: a capital letter then letters/digits.');
+    if (D.COUNTRIES.some((x) => x[0] === c.tag)) err(w, `Tag ${c.tag} is already a vanilla country.`);
+    dupe('tag', c.tag, w);
+    if (c.existsAtStart && !(c.states || []).length) err(w, 'Exists at start but owns no states — it would not exist. Add state ids or untick "Exists at game start".');
+    if (c.existsAtStart && (c.states || []).length && !c.capital) warn(w, 'No capital state set.');
+    if (c.existsAtStart && c.capital && !(c.states || []).map(String).includes(String(c.capital))) warn(w, 'Capital is not one of its states.');
+    if (!c.flag) warn(w, 'No flag — the game will show a blank flag.');
+  }
   for (const t of p.focusTrees) {
     const where = `Focus tree "${t.name}"`;
     if (!t.treeId) err(where, 'Tree id is empty.');

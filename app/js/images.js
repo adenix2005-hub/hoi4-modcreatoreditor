@@ -92,3 +92,31 @@ export function dataUrlToBytes(dataUrl) {
   for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
   return out;
 }
+
+// Uncompressed 32-bit TGA. HOI4 flags must be .tga.
+export function canvasToTGA(canvas) {
+  const w = canvas.width;
+  const h = canvas.height;
+  const px = canvas.getContext('2d').getImageData(0, 0, w, h).data;
+  const out = new Uint8Array(18 + w * h * 4);
+  out[2] = 2; // uncompressed true-colour
+  out[12] = w & 255; out[13] = w >> 8;
+  out[14] = h & 255; out[15] = h >> 8;
+  out[16] = 32;
+  out[17] = 0x08; // 8 alpha bits, bottom-left origin (rows stored bottom-up)
+  let o = 18;
+  for (let y = h - 1; y >= 0; y--) {
+    for (let x = 0; x < w; x++) {
+      const i = (y * w + x) * 4;
+      out[o++] = px[i + 2];
+      out[o++] = px[i + 1];
+      out[o++] = px[i];
+      out[o++] = px[i + 3];
+    }
+  }
+  return out;
+}
+
+export async function toTGA(dataUrl, w, h) {
+  return canvasToTGA(await resizeToCanvas(dataUrl, w, h, 'cover'));
+}

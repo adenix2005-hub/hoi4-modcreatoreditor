@@ -17,6 +17,7 @@ Every push to GitHub builds a fresh `.exe` automatically (see `.github/workflows
 
 | Section | What you can make |
 |---|---|
+| **Countries** | Create **brand-new countries**: tag, name/adjective, flag (auto-converted to the game's .tga sizes), map colour, unit/portrait style, starting states and capital (or just cores, to release later), ruling party, popularity, stability and more — plus different names and flags per ideology. |
 | **Focus Trees** | Drag-and-drop focus tree editor: add, move and link focuses ("requires", "requires one of", mutually exclusive). Set rewards and conditions by picking from a list. **Import a vanilla tree** (`common/national_focus/*.txt` + its localisation) to edit or completely overhaul it. |
 | **People** | Country leaders, advisors / high command, generals, field marshals and admirals. Upload any picture as a portrait (auto-resized and converted to `.dds`). Give them vanilla or custom traits. |
 | **Traits** | Leader/advisor traits and general/admiral traits with exact bonuses. Import a vanilla traits file to change vanilla numbers. |
@@ -32,7 +33,7 @@ Wherever you see **+ Add effect** or **+ Add condition**, you pick from a list (
 
 ## Using it
 
-1. **Overview**: name your mod and add the countries you're changing.
+1. **Overview**: name your mod. **Countries**: add the countries you're changing or create new ones.
 2. Build your content in the other sections. Work autosaves, and **Save** writes a project file you can reopen later.
 3. **Export mod**: choose `Documents/Paradox Interactive/Hearts of Iron IV/mod`.
 4. Open the HOI4 launcher, add the mod to a playset, and play.

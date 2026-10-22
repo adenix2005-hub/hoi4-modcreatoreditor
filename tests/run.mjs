@@ -11,6 +11,18 @@ const { buildMod, validate } = await import('../app/js/export.js');
 const { importFocusFile, parseLoc } = await import('../app/js/editors/focus.js');
 
 let passed = 0;
+
+// Every UI module must at least parse (editors are not otherwise loaded in Node).
+import { readdirSync, readFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+for (const dir of ['app/js', 'app/js/editors']) {
+  for (const f of readdirSync(new URL(`../${dir}/`, import.meta.url))) {
+    if (!f.endsWith('.js')) continue;
+    const src = readFileSync(new URL(`../${dir}/${f}`, import.meta.url));
+    try { execFileSync(process.execPath, ['--input-type=module', '--check'], { input: src, stdio: 'pipe' }); }
+    catch (e) { console.error('FAIL syntax', `${dir}/${f}`, String(e.stderr)); process.exitCode = 1; }
+  }
+}
 const test = async (name, fn) => {
   try { await fn(); passed++; console.log('ok  ', name); } catch (e) { console.error('FAIL', name, '\n', e); process.exitCode = 1; }
 };
@@ -46,6 +58,9 @@ await test('localisation parser', () => {
 await test('full project exports well-formed files', async () => {
   const p = emptyProject();
   p.countries.push({ tag: 'GER', name: 'Germany' });
+  p.countries.push({ tag: 'NRD', name: 'Nordic Union', isNew: true, adj: 'Nordic', def: 'the Nordic Union', color: '#336699', culture: 'western_european',
+    flag: '', ideoFlags: {}, ideoNames: { communism: "Nordic People's Republic" }, existsAtStart: true, states: ['110', '111'], cores: ['112'], capital: '110',
+    ruling: 'democratic', popularity: { democratic: 50, communism: 10, fascism: 10, neutrality: 20 }, elections: true, stability: 0.6, warSupport: 0.2, researchSlots: 3, convoys: 20, basicTechs: true });
   p.focusTrees.push({ treeId: 'ger_tree', tag: 'GER', name: 'T', overhaul: true, focuses: [
     { id: 'GER_a', name: 'A', icon: 'GFX_goal_unknown', x: 0, y: 0, cost: 10, prereq: [], exclusive: ['GER_b'], reward: 'add_political_power = 50', available: '', bypass: '', filters: [], aiFactor: 1 },
     { id: 'GER_b', name: 'B', icon: 'GFX_goal_unknown', x: 2, y: 0, cost: 5, prereq: [], exclusive: ['GER_a'], reward: '', available: 'has_war = no', bypass: '', filters: [], aiFactor: 1 },
@@ -95,6 +110,14 @@ await test('full project exports well-formed files', async () => {
   assert.match(get('mymod_l_english.yml'), /mymod\.1\.t:0 "E \\"quoted\\""/);
   assert.match(get('mymod_events.txt'), /date > 1938\.2\.28/);
   assert.match(get('mymod_bop.txt'), /side = \{\s+id = GER_bop_left/);
+  assert.match(get('mymod_countries.txt'), /NRD = "countries\/Nordic Union.txt"/);
+  assert.match(get('countries/Nordic Union.txt'), /color = \{ 51 102 153 \}/);
+  const hist = get('NRD - Nordic Union.txt');
+  assert.match(hist, /capital = 110/);
+  assert.match(hist, /democratic = 56/); // 50/90 scaled to 100%
+  assert.match(get('mymod_on_actions.txt'), /110 = \{ transfer_state_to = NRD add_core_of = NRD \}/);
+  assert.match(get('mymod_on_actions.txt'), /112 = \{ add_core_of = NRD \}/);
+  assert.match(get('mymod_l_english.yml'), /NRD_communism:0 "Nordic People's Republic"/);
 });
 
 console.log(`\n${passed} passed`);

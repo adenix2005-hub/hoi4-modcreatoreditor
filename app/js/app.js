@@ -3,6 +3,7 @@ import { project, setProject, onDirty, loadAutosave, emptyProject, projectPath, 
 import { buildMod, validate } from './export.js';
 import { makeZip, download } from './zip.js';
 import * as overview from './editors/overview.js';
+import * as countries from './editors/countries.js';
 import * as focus from './editors/focus.js';
 import * as characters from './editors/characters.js';
 import * as traits from './editors/traits.js';
@@ -16,6 +17,7 @@ import * as divisions from './editors/divisions.js';
 
 const PAGES = [
   ['overview', '🏠', 'Overview', overview],
+  ['countries', '🗺', 'Countries', countries],
   ['focus', '🌳', 'Focus Trees', focus],
   ['characters', '👤', 'People', characters],
   ['traits', '⭐', 'Traits', traits],

@@ -198,6 +198,8 @@ export const EFFECTS = [
   { id: 'guarantee', label: 'Guarantee independence', cat: 'Diplomacy', params: [{ n: 't', l: 'Country', t: 'tag' }], tpl: (p) => `give_guarantee = ${p.t}` },
   { id: 'opinion', label: 'Improve relations', cat: 'Diplomacy', params: [{ n: 't', l: 'Country', t: 'tag' }], tpl: (p) => `add_opinion_modifier = { target = ${p.t} modifier = medium_increase }` },
   { id: 'threat', label: 'Add world tension', cat: 'Diplomacy', params: [{ n: 'a', l: 'Amount', t: 'num', d: 5 }], tpl: (p) => `add_named_threat = { threat = ${p.a} name = WORLD_TENSION_EVENT }` },
+  { id: 'release', label: 'Release country (needs cores)', cat: 'Diplomacy', params: [{ n: 't', l: 'Country', t: 'tag' }], tpl: (p) => `release = ${p.t}` },
+  { id: 'releasepuppet', label: 'Release country as our puppet', cat: 'Diplomacy', params: [{ n: 't', l: 'Country', t: 'tag' }], tpl: (p) => `release_puppet = ${p.t}` },
   { id: 'state', label: 'Transfer state to us', cat: 'Diplomacy', params: [{ n: 's', l: 'State ID', t: 'num', d: 1 }], tpl: (p) => `transfer_state = ${p.s}` },
   { id: 'core', label: 'Add core on state', cat: 'Diplomacy', params: [{ n: 's', l: 'State ID', t: 'num', d: 1 }], tpl: (p) => `add_state_core = ${p.s}` },
   { id: 'claim', label: 'Add claim on state', cat: 'Diplomacy', params: [{ n: 's', l: 'State ID', t: 'num', d: 1 }], tpl: (p) => `add_state_claim = ${p.s}` },

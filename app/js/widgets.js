@@ -184,7 +184,7 @@ export function picturePicker(obj, key, size, opts = {}) {
     inp.addEventListener('input', () => { obj[opts.vanillaKey] = inp.value.trim(); markDirty(); draw(); opts.onChange && opts.onChange(); });
     vanilla = h('div', { class: 'pic-vanilla' }, h('span', { class: 'hint' }, 'Or use a game picture: '), inp);
   }
-  return h('div', { class: 'pic' }, preview, h('div', { class: 'pic-actions' }, upload, remove, h('div', { class: 'hint' }, `Any PNG/JPG works — it is resized to ${w}×${hgt} and converted to .dds on export.`), vanilla));
+  return h('div', { class: 'pic' }, preview, h('div', { class: 'pic-actions' }, upload, remove, h('div', { class: 'hint' }, `Any PNG/JPG works — it is resized to ${w}×${hgt} and converted to ${opts.ext || '.dds'} on export.`), vanilla));
 }
 
 // Country picker input with all known tags.

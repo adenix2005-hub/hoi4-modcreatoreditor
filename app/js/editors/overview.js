@@ -14,18 +14,9 @@ export function render(root, actions) {
     ['Special mechanics', project.mechanics.length + project.bops.length, 'mechanics'], ['Technologies', project.technologies.length, 'tech'],
     ['Equipment & units', project.equipment.length + project.subunits.length, 'units'], ['Division templates', project.divisions.length, 'divisions'],
   ];
-  const countries = h('div');
-  const drawCountries = () => {
-    clear(countries);
-    for (const c of project.countries) {
-      countries.append(h('div', { class: 'mod-row' },
-        tagIn(c, 'tag', { onChange: (v) => { const known = D.COUNTRIES.find((x) => x[0] === v); if (known && !c.name) { c.name = known[1]; drawCountries(); } } }),
-        textIn(c, 'name', { placeholder: 'Country name' }),
-        h('button', { class: 'icon danger', onclick: () => { project.countries.splice(project.countries.indexOf(c), 1); markDirty(); drawCountries(); } }, '✕')));
-    }
-    countries.append(h('button', { class: 'small', onclick: () => { project.countries.push({ uid: uid(), tag: '', name: '' }); markDirty(); drawCountries(); } }, '+ Add country'));
-  };
-  drawCountries();
+  const countries = h('div', null,
+    project.countries.length ? h('div', { class: 'chips' }, project.countries.map((c) => h('span', { class: 'chip', style: { paddingRight: '10px' } }, `${c.tag || '???'} ${c.name || ''}${c.isNew ? ' (new)' : ''}`))) : h('div', { class: 'hint' }, 'None yet.'),
+    h('div', { class: 'row', style: { marginTop: '8px' } }, h('button', { class: 'small', onclick: () => actions.go('countries') }, 'Manage countries / create a new one →')));
   const issuesBox = h('div');
   const runCheck = () => {
     clear(issuesBox);
@@ -42,12 +33,12 @@ export function render(root, actions) {
           field('Folder name', idIn(m, 'folder'), 'Folder inside Documents/Paradox Interactive/Hearts of Iron IV/mod'),
           field('Script prefix', idIn(m, 'prefix'), 'Short code put in front of generated names, e.g. "mymod".'),
           field('Mod version', textIn(m, 'version')),
-          field('Game version', textIn(m, 'supported'), 'e.g. 1.16.* — match your game')),
+          field('Game version', textIn(m, 'supported'), 'The version shown bottom-left in the HOI4 launcher, e.g. 1.19.* (only affects the launcher warning)')),
         field('Launcher tags', chipList(m.tags, ['Gameplay', 'National Focuses', 'Events', 'Technologies', 'Military', 'Alternative History', 'Balance', 'Graphics', 'Historical', 'Ideologies', 'Map', 'Fixes', 'Translation', 'Utilities'])),
         field('Thumbnail', picturePicker(m, 'thumbnail', D.IMAGE_SIZES.modThumb)),
       ),
       h('div', null,
-        h('div', { class: 'section' }, h('h3', null, 'Countries in this mod'), h('p', { class: 'hint' }, 'Add the countries you are changing. They show up first in every country picker.'), countries),
+        h('div', { class: 'section' }, h('h3', null, 'Countries in this mod'), h('p', { class: 'hint' }, 'Vanilla countries you are changing and brand-new countries you create.'), countries),
         h('div', { class: 'section' }, h('h3', null, 'What\'s in the mod'),
           h('div', { class: 'count-grid' }, counts.map(([l, n, page]) => h('button', { class: 'count', onclick: () => actions.go(page) }, h('b', null, n), h('span', null, l))))),
         h('div', { class: 'section' }, h('h3', null, 'Export'),

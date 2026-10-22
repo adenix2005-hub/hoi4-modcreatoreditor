@@ -17,7 +17,7 @@ export function emptyProject() {
       folder: 'my_mod',
       prefix: 'mymod',
       version: '1.0',
-      supported: '1.16.*',
+      supported: '1.19.*',
       tags: ['Gameplay', 'National Focuses'],
       thumbnail: '',
     },
