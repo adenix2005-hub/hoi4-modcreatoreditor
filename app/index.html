@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self'">
+  <title>HOI4 Mod Studio</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header id="topbar">
+    <div class="brand"><span class="logo">★</span> HOI4 Mod Studio</div>
+    <div id="mod-title"></div>
+    <div class="top-actions">
+      <button id="btn-new">New</button>
+      <button id="btn-open">Open…</button>
+      <button id="btn-save" title="Ctrl+S">Save</button>
+      <button id="btn-saveas" title="Ctrl+Shift+S">Save as…</button>
+      <button id="btn-export" class="primary">⬇ Export mod</button>
+      <button id="btn-help">?</button>
+    </div>
+  </header>
+  <nav id="nav"></nav>
+  <main id="main"></main>
+  <div id="toasts"></div>
+  <div id="datalists" hidden></div>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

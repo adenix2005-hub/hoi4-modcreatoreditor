@@ -1,0 +1,44 @@
+{
+  "name": "hoi4-mod-studio",
+  "productName": "HOI4 Mod Studio",
+  "version": "0.1.0",
+  "description": "Visual mod creator/editor for Hearts of Iron IV",
+  "main": "electron/main.js",
+  "author": "adenix2005-hub",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "dist:win": "electron-builder --win portable nsis --x64",
+    "test": "node --no-warnings tests/run.mjs"
+  },
+  "devDependencies": {
+    "electron": "^33.2.1",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.hoi4modstudio.app",
+    "productName": "HOI4 Mod Studio",
+    "files": [
+      "electron/**/*",
+      "app/**/*",
+      "package.json"
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": [
+        "portable",
+        "nsis"
+      ]
+    },
+    "portable": {
+      "artifactName": "HOI4-Mod-Studio-portable.exe"
+    },
+    "nsis": {
+      "artifactName": "HOI4-Mod-Studio-Setup.exe",
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  }
+}
