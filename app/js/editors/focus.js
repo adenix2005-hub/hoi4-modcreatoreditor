@@ -1,6 +1,7 @@
 import { h, clear, field, textIn, idIn, numIn, areaIn, checkIn, modal, toast, confirmDlg, pickFile, readAsText, datalist, slug, imgThumb, row } from '../ui.js';
 import { project, markDirty, uid, prefix, uniqueId, clone } from '../state.js';
 import { scriptBox, picturePicker, tagIn, chipList } from '../widgets.js';
+import { openNodeEditor } from '../scriptgraph.js';
 import { createGraph } from '../graph.js';
 import * as D from '../data.js';
 import { parse, get, getAll, bare, unq, blockText } from '../pdx.js';
@@ -44,7 +45,8 @@ export function render(root) {
         h('div', { class: 'fn-name' }, f.name || f.id),
         h('div', { class: 'fn-days' }, `${Math.round((Number(f.cost) || 0) * 7)}d`),
       );
-      el.title = f.id;
+      el.title = `${f.id} — double-click to edit its nodes`;
+      if ((f.reward || '').trim()) el.append(h('div', { class: 'fn-badge', title: 'Has completion effects' }, '⚡'));
     },
     edges: () => edgesOf(curTree),
     onMove: (f, x, y) => {
@@ -52,6 +54,7 @@ export function render(root) {
       f.x = x; f.y = y; markDirty(); drawProps();
     },
     onSelect: (f) => { curFocus = f; drawProps(); },
+    onNodeDblClick: (f) => { curFocus = f; openFocusNodes(f); },
     onAdd: (x, y) => {
       if (curTree.focuses.some((o) => o.x === x && o.y === y)) return;
       const f = newFocus(curTree, x, y);
@@ -220,7 +223,7 @@ function drawProps() {
   if (!f || !curTree || !curTree.focuses.includes(f)) {
     propsEl.append(h('div', { class: 'empty' },
       h('p', null, 'Click a focus to edit it.'),
-      h('p', { class: 'hint' }, 'Tips: double-click empty grid to add • drag to move • "Requires" links: click parent, then child • Ctrl+scroll to zoom • Delete key removes the selected focus.')));
+      h('p', { class: 'hint' }, 'Tips: double-click empty grid to add • double-click a focus to open its effect & requirement nodes • drag to move • "Requires" links: click parent, then child • Ctrl+scroll to zoom • Delete key removes the selected focus.')));
     return;
   }
   let oldId = f.id;
@@ -233,6 +236,10 @@ function drawProps() {
         h('button', { class: 'small danger', onclick: () => deleteFocus(f) }, 'Delete'))),
     field('Name', textIn(f, 'name', { onChange: () => graph.draw() })),
     field('Description', areaIn(f, 'desc', { rows: 3 })),
+    h('button', { class: 'primary big-node-btn', onclick: () => openFocusNodes(f) }, '🧩 Edit effects & requirements as nodes'),
+    field('Completion reward', scriptBox(f, 'reward', 'effect', { rows: 5, ...nodeOpts(f), help: 'What happens when the focus completes.' })),
+    field('Available when', scriptBox(f, 'available', 'trigger', { rows: 2, ...nodeOpts(f) })),
+    field('Bypass when', scriptBox(f, 'bypass', 'trigger', { rows: 2, ...nodeOpts(f), placeholder: 'Never skipped automatically.' })),
     field('Focus id', idInput, 'Unique code name. Other things refer to this.'),
     field('Icon', picturePicker(f, 'img', D.IMAGE_SIZES.focus, { vanillaKey: 'icon', vanillaList: D.FOCUS_ICONS, onChange: () => graph.draw() })),
     h('div', { class: 'grid2' },
@@ -242,17 +249,31 @@ function drawProps() {
       field('Grid Y', numIn(f, 'y', { onChange: () => graph.draw() })),
     ),
     prereqView(f),
-    field('Completion reward', scriptBox(f, 'reward', 'effect', { rows: 5, help: 'What happens when the focus completes.' })),
-    field('Available when', scriptBox(f, 'available', 'trigger', { rows: 2 })),
-    field('Bypass when', scriptBox(f, 'bypass', 'trigger', { rows: 2, placeholder: 'Skip this focus automatically when…' })),
     field('Search filters', chipList(f.filters, D.FOCUS_FILTERS, { placeholder: 'FOCUS_FILTER_…' })),
     h('details', null, h('summary', null, 'Advanced'),
       checkIn(f, 'cancelIfInvalid', 'Cancel if it becomes unavailable'),
       checkIn(f, 'continueIfInvalid', 'Continue even if it becomes unavailable'),
       checkIn(f, 'availableIfCapitulated', 'Available while capitulated'),
-      field('Select effect (runs when picked)', scriptBox(f, 'selectEffect', 'effect', { rows: 2 })),
+      field('Select effect (runs when picked)', scriptBox(f, 'selectEffect', 'effect', { rows: 2, ...nodeOpts(f) })),
       field('Extra raw script inside the focus', areaIn(f, 'extra', { code: true, rows: 3 }))),
   );
+}
+
+function focusFields(f) {
+  return [
+    { obj: f, key: 'reward', kind: 'effect', label: '⚡ Completion reward' },
+    { obj: f, key: 'available', kind: 'trigger', label: '✔ Available when' },
+    { obj: f, key: 'bypass', kind: 'trigger', label: '⤼ Bypass when' },
+    { obj: f, key: 'selectEffect', kind: 'effect', label: '▶ When picked' },
+  ];
+}
+
+function nodeOpts(f) {
+  return { group: focusFields(f), title: `Focus: ${f.name || f.id}`, onNodesClosed: () => { graph && graph.draw(); drawProps(); } };
+}
+
+function openFocusNodes(f) {
+  openNodeEditor({ title: `Focus: ${f.name || f.id}`, fields: focusFields(f), active: 0, onClose: () => { graph && graph.draw(); drawProps(); } });
 }
 
 function prereqView(f) {

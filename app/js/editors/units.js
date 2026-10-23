@@ -68,7 +68,9 @@ export function render(root) {
   else drawModel(cur, detail, list);
 }
 
-function newEquipment() {
+export function select(item, which) { tab = which; cur = item; }
+
+export function newEquipment() {
   return {
     uid: uid(), id: uniqueId(`${prefix()}_new_equipment`, allEquipmentIds()), name: 'New Equipment', desc: '', img: '', type: 'infantry', year: 1936,
     soft_attack: 3, hard_attack: 0.5, defense: 20, breakthrough: 2, ap_attack: 1, armor_value: 0, hardness: 0, air_attack: 0, reliability: 0.9, maximum_speed: 4, build_cost_ic: 0.5,
@@ -101,12 +103,7 @@ function drawEquipment(e, detail, list) {
 function choosePreset(root) {
   const body = h('div', { class: 'preset-list' });
   const make = (key) => {
-    const p = PRESETS[key];
-    const s = {
-      uid: uid(), id: uniqueId(`${prefix()}_${key}_unit`, project.subunits.map((x) => x.id)), name: 'New ' + p.label.split(' (')[0], desc: '', img: '',
-      support: p.support, group: p.group, sprite: p.sprite, mapIcon: p.mapIcon, width: p.width, manpower: p.manpower, training: p.training, org: p.org, hp: p.hp,
-      suppression: p.suppression, weight: p.weight, supply: p.supply, need: clone(p.need), soft_mult: 1, hard_mult: 1, def_mult: 1, bt_mult: 1, extra: p.extraMods || '', model: '',
-    };
+    const s = newSubunit(key);
     project.subunits.push(s);
     cur = s;
     markDirty();
@@ -115,6 +112,15 @@ function choosePreset(root) {
   };
   for (const k of Object.keys(PRESETS)) body.append(h('button', { class: 'preset', onclick: () => make(k) }, PRESETS[k].label));
   modal('Start from…', body, [{ label: 'Cancel' }]);
+}
+
+export function newSubunit(key) {
+    const p = PRESETS[key];
+    return {
+      uid: uid(), id: uniqueId(`${prefix()}_${key}_unit`, project.subunits.map((x) => x.id)), name: 'New ' + p.label.split(' (')[0], desc: '', img: '',
+      support: p.support, group: p.group, sprite: p.sprite, mapIcon: p.mapIcon, width: p.width, manpower: p.manpower, training: p.training, org: p.org, hp: p.hp,
+      suppression: p.suppression, weight: p.weight, supply: p.supply, need: clone(p.need), soft_mult: 1, hard_mult: 1, def_mult: 1, bt_mult: 1, extra: p.extraMods || '', model: '',
+    };
 }
 
 function drawSubunit(s, detail, list) {

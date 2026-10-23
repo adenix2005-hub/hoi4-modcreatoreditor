@@ -120,4 +120,34 @@ await test('full project exports well-formed files', async () => {
   assert.match(get('mymod_l_english.yml'), /NRD_communism:0 "Nordic People's Republic"/);
 });
 
+await test('script -> nodes -> script keeps meaning', async () => {
+  const { decompile, compile } = await import('../app/js/scriptgraph.js');
+  const same = (a, b) => assert.deepEqual(parse(a), parse(b));
+  const eff = `add_political_power = 120
+if = {
+	limit = { has_war = no tag = GER }
+	add_stability = 0.05
+	ITA = { country_event = { id = italy.5 days = 3 } }
+}
+else = { add_war_support = 0.1 }
+random_owned_controlled_state = {
+	prioritize = { 0 }
+	add_extra_state_shared_building_slots = 2
+	add_building_construction = { type = industrial_complex level = 2 instant_build = yes }
+}
+add_tech_bonus = { name = bonus_industry bonus = 0.5 uses = 1 category = industry }
+hidden_effect = { set_country_flag = secret }
+random = { chance = 30 add_manpower = 5000 }
+some_unknown_effect = { foo = bar }`;
+  const g = decompile(eff, 'effect');
+  const types = g.nodes.map((n) => n.type);
+  assert.ok(types.includes('eff:pp') && types.includes('if') && types.includes('eff:civ') && types.includes('eff:techbonus') && types.includes('hidden') && types.includes('random') && types.includes('raw'), types.join());
+  assert.ok(types.includes('eff:cevent') && types.includes('scope') && types.includes('trg:peace'), types.join());
+  same(compile(g), eff);
+  const trg = 'has_war = no\nOR = { tag = GER tag = ITA }\nNOT = { has_country_flag = x has_idea = y }\ndate > 1938.1.1\nfoo_bar = 3';
+  const tg = decompile(trg, 'trigger');
+  assert.ok(tg.nodes.some((n) => n.type === 'or') && tg.nodes.some((n) => n.type === 'rawt'));
+  same(compile(tg), trg);
+});
+
 console.log(`\n${passed} passed`);

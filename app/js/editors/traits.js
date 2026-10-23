@@ -7,6 +7,8 @@ import { parse, get, unq, blockText } from '../pdx.js';
 let tab = 'leader';
 let cur = null;
 
+export function select(t, which) { tab = which; cur = t; }
+
 export function render(root) {
   const arr = tab === 'leader' ? project.leaderTraits : project.unitTraits;
   if (cur && !arr.includes(cur)) cur = null;

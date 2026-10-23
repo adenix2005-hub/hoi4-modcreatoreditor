@@ -126,6 +126,7 @@ export function createGraph(cfg) {
   }
 
   function attachNode(el, n) {
+    el.addEventListener('dblclick', (ev) => { ev.stopPropagation(); cfg.onNodeDblClick && cfg.onNodeDblClick(n); });
     el.addEventListener('pointerdown', (ev) => {
       if (ev.button !== 0) return;
       ev.stopPropagation();
@@ -158,8 +159,11 @@ export function createGraph(cfg) {
           const nx = Math.round(n.x + dx / cfg.cellW);
           const ny = Math.round(n.y + dy / cfg.cellH);
           cfg.onMove(n, nx, ny);
+          draw();
+        } else {
+          inner.querySelectorAll('.gnode.sel').forEach((x) => x.classList.remove('sel'));
+          el.classList.add('sel');
         }
-        draw();
       };
       el.addEventListener('pointermove', move);
       el.addEventListener('pointerup', up);

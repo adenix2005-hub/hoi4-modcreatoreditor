@@ -4,10 +4,11 @@ import { project, markDirty } from './state.js';
 import * as D from './data.js';
 import { normalizeUpload } from './images.js';
 import { checkBraces } from './pdx.js';
+import { describe, openNodeEditor } from './scriptgraph.js';
 import { allEventIds, allFocusIds, allIdeaIds, allTechIds, allEquipmentIds, allCharacterIds, allMechVars, allBopIds, allDecisionIds, allTreeIds } from './refs.js';
 
 // Values offered for each param type in the builder
-function optionsFor(t) {
+export function optionsFor(t) {
   switch (t) {
     case 'tag': return [...new Set([...project.countries.map((c) => c.tag), ...D.COUNTRIES.map((c) => c[0])])];
     case 'idea': return allIdeaIds();
@@ -82,23 +83,45 @@ export function openBuilder(kind, onInsert) {
   ], { wide: true });
 }
 
-// Script textarea + "Add…" helper button. kind = 'effect' | 'trigger'
+// Effects / requirements box: readable summary + node editor, with the raw script as an optional view.
+// kind = 'effect' | 'trigger'. opts.group = [{ obj, key, kind, label }] opens several fields as tabs.
 export function scriptBox(obj, key, kind, opts = {}) {
   const ta = h('textarea', { class: 'code', rows: opts.rows || 4, spellcheck: 'false', placeholder: opts.placeholder || (kind === 'trigger' ? 'Leave empty = always' : 'Leave empty = nothing happens') });
   ta.value = obj[key] || '';
   const err = h('div', { class: 'script-err' });
+  const summary = h('div', { class: 'script-summary' });
   const check = () => { const e = checkBraces(ta.value); err.textContent = e ? '⚠ ' + e : ''; };
-  ta.addEventListener('input', () => { obj[key] = ta.value; markDirty(); check(); });
+  const drawSummary = () => {
+    clear(summary);
+    let lines = [];
+    try { lines = describe(obj[key] || '', kind); } catch (e) { lines = ['(could not read script)']; }
+    if (!lines.length) summary.append(h('span', { class: 'hint' }, kind === 'trigger' ? (opts.placeholder || 'No requirements (always true).') : (opts.placeholder || 'Nothing happens yet.')));
+    for (const l of lines.slice(0, 14)) summary.append(h('div', { class: 'ss-line' }, l));
+    if (lines.length > 14) summary.append(h('div', { class: 'hint' }, `… and ${lines.length - 14} more`));
+  };
+  ta.addEventListener('input', () => { obj[key] = ta.value; delete obj[key + 'Graph']; markDirty(); check(); drawSummary(); });
   check();
-  const add = h('button', {
-    class: 'small', onclick: () => openBuilder(kind, (text) => {
-      ta.value = (ta.value.trim() ? ta.value.replace(/\s+$/, '') + '\n' : '') + text;
-      obj[key] = ta.value;
+  drawSummary();
+  const scriptWrap = h('div', { class: 'hidden' }, ta, err);
+  const refresh = () => { ta.value = obj[key] || ''; check(); drawSummary(); opts.onChange && opts.onChange(); };
+  const openNodes = () => {
+    const group = opts.group || [{ obj, key, kind, label: opts.label || (kind === 'trigger' ? 'Requirements' : 'Effects') }];
+    const active = Math.max(0, group.findIndex((g) => g.obj === obj && g.key === key));
+    openNodeEditor({ title: opts.title || 'Node editor', fields: group, active, onClose: () => { refresh(); opts.onNodesClosed && opts.onNodesClosed(); } });
+  };
+  const nodesBtn = h('button', { class: 'small primary-soft', onclick: openNodes }, '🧩 Open node editor');
+  const quick = h('button', {
+    class: 'small', title: 'Quick add without opening the node editor', onclick: () => openBuilder(kind, (text) => {
+      obj[key] = ((obj[key] || '').trim() ? (obj[key] || '').replace(/\s+$/, '') + '\n' : '') + text;
+      delete obj[key + 'Graph'];
       markDirty();
-      check();
+      refresh();
     }),
-  }, kind === 'trigger' ? '+ Add condition' : '+ Add effect');
-  return h('div', { class: 'script-box' }, h('div', { class: 'script-tools' }, add, opts.help ? h('span', { class: 'hint' }, opts.help) : null), ta, err);
+  }, kind === 'trigger' ? '+ Quick condition' : '+ Quick effect');
+  const toggle = h('button', { class: 'small', onclick: () => { scriptWrap.classList.toggle('hidden'); toggle.classList.toggle('active'); } }, '</> Script');
+  summary.addEventListener('dblclick', openNodes);
+  summary.title = 'Double-click to open the node editor';
+  return h('div', { class: 'script-box' }, h('div', { class: 'script-tools' }, nodesBtn, quick, toggle, opts.help ? h('span', { class: 'hint' }, opts.help) : null), summary, scriptWrap);
 }
 
 // List of { key, value } modifier rows.

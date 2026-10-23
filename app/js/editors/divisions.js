@@ -7,7 +7,9 @@ let cur = null;
 const COLS = 5;
 const ROWS = 5;
 
-function blank() {
+export function select(d) { cur = d; }
+
+export function blank() {
   return {
     uid: uid(), name: 'New Division', tag: project.countries[0]?.tag || '',
     grid: Array.from({ length: COLS }, () => Array(ROWS).fill('')),

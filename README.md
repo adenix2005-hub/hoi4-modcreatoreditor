@@ -17,6 +17,7 @@ Every push to GitHub builds a fresh `.exe` automatically (see `.github/workflows
 
 | Section | What you can make |
 |---|---|
+| **Node Map** | Techs, equipment, battalions, divisions, countries, traits and people as connected nodes. **Drag a wire to link them**: a tech unlocks equipment, equipment is used by a battalion, a battalion goes in a division, a trait goes to a person. Click a wire to unlink. |
 | **Countries** | Create **brand-new countries**: tag, name/adjective, flag (auto-converted to the game's .tga sizes), map colour, unit/portrait style, starting states and capital (or just cores, to release later), ruling party, popularity, stability and more — plus different names and flags per ideology. |
 | **Focus Trees** | Drag-and-drop focus tree editor: add, move and link focuses ("requires", "requires one of", mutually exclusive). Set rewards and conditions by picking from a list. **Import a vanilla tree** (`common/national_focus/*.txt` + its localisation) to edit or completely overhaul it. |
 | **People** | Country leaders, advisors / high command, generals, field marshals and admirals. Upload any picture as a portrait (auto-resized and converted to `.dds`). Give them vanilla or custom traits. |
@@ -29,7 +30,7 @@ Every push to GitHub builds a fresh `.exe` automatically (see `.github/workflows
 | **Units & Equipment** | Custom equipment (stats, cost, resources). Battalions and **support companies** (including HQ-style companies) that use your equipment. Import **3D models** (`.mesh`) and use them on battalions. |
 | **Division Designer** | 5×5 template grid plus support column, with live stats. Place divisions on the map at game start, with an equipment stockpile to fill them. |
 
-Wherever you see **+ Add effect** or **+ Add condition**, you pick from a list (e.g. "Build civilian factory", "Fire country event", "Shift balance of power") and fill in the blanks. You can still type HOI4 script by hand.
+**Node editor for effects & requirements.** Every reward, condition and effect (focuses, events, decisions, mechanics…) opens in a 🧩 flowchart editor. A **Start** node chains into effect nodes like "Add political power", "Build civilian factory" or "Fire event". Logic nodes include **If → Then / Otherwise**, **In another country**, **For every country**, **Random chance** and **Hidden**. Requirement nodes plug into **All of / Any of / None of**. The HOI4 script is generated for you, and existing or imported vanilla script is turned *into* nodes automatically. In a focus tree, **double-click a focus** to open its reward/available/bypass nodes. You can still view or type the raw script with the `</> Script` button.
 
 ## Using it
 

@@ -6,7 +6,9 @@ import { allLeaderTraitIds, allUnitTraitIds } from '../refs.js';
 
 let cur = null;
 
-function blank() {
+export function select(c) { cur = c; }
+
+export function blank() {
   return {
     uid: uid(), id: '', name: 'New Person', tag: '', desc: '', portrait: '', portraitPath: '',
     leader: { on: false, ideology: 'despotism', traits: [], atStart: false },

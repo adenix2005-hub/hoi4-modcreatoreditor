@@ -5,6 +5,8 @@ import * as D from '../data.js';
 
 let cur = null;
 
+export function select(c) { cur = c; }
+
 export const CULTURES = [
   ['western_european', 'Western European'], ['eastern_european', 'Eastern European'], ['middle_eastern', 'Middle Eastern'],
   ['african', 'African'], ['southamerican', 'South American'], ['commonwealth', 'Commonwealth'], ['asian', 'Asian'],

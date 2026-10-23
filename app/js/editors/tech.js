@@ -56,7 +56,7 @@ function drawTree(body, root) {
     onMove: (t, x, y) => { t.x = x; t.y = y; markDirty(); drawProps(); },
     onSelect: (t) => { cur = t; drawProps(); },
     onAdd: (x, y) => {
-      const t = newTech(x, y);
+      const t = newTech(x, y, folder);
       project.technologies.push(t);
       cur = t;
       markDirty();
@@ -82,7 +82,10 @@ function drawTree(body, root) {
   drawProps();
 }
 
-function newTech(x, y) {
+export function select(t) { tab = 'tree'; if (t) folder = t.folder; cur = t; }
+
+export function newTech(x, y, inFolder) {
+  const folder = inFolder || 'infantry_folder';
   return {
     uid: uid(), id: uniqueId(`${prefix()}_new_tech`, allTechIds()), name: 'New Technology', desc: '', img: '', folder, x, y,
     year: 1936, cost: 1.5, categories: [], leadsTo: [], xor: [], enableEquip: [], enableUnits: [], mods: [], allowTags: [], ai: 1, extra: '', vanillaParent: '',
